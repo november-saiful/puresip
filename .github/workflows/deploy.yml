@@ -4,10 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
   NODE_VERSION: '20'
@@ -19,108 +23,176 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Generate placeholder images
         run: node scripts/generate-images.mjs
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: npm run typecheck
 
       - name: Unit tests
-        run: pnpm test
+        run: npm test
 
       - name: Build frontend
-        run: pnpm build
+        run: npm run build
+
+  bootstrap:
+    name: Bootstrap Cloudflare resources (run manually)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create D1 database (if missing)
+        run: |
+          if npx wrangler d1 list --json | grep -q '"name": *"puresip-db"'; then
+            echo "D1 database 'puresip-db' already exists — skipping"
+          else
+            npx wrangler d1 create puresip-db
+          fi
+
+      - name: Create KV namespace (if missing)
+        run: |
+          if npx wrangler kv namespace list | grep -qE '"title": *"[^"]*-CART_KV"'; then
+            echo "KV namespace 'CART_KV' already exists — skipping"
+          else
+            npx wrangler kv namespace create CART_KV
+          fi
+
+      - name: Create R2 bucket (if missing)
+        run: |
+          if npx wrangler r2 bucket list | grep -q 'puresip-images'; then
+            echo "R2 bucket 'puresip-images' already exists — skipping"
+          else
+            npx wrangler r2 bucket create puresip-images
+          fi
+
+      - name: Print IDs to paste into wrangler.toml
+        run: |
+          D1_UUID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const a=JSON.parse(s);const db=a.find(x=>x.name==="puresip-db");console.log(db?db.uuid:"NOT-FOUND")})')
+          KV_ID=$(npx wrangler kv namespace list | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const a=JSON.parse(s);const ns=a.find(x=>x.title.endsWith("-CART_KV"));console.log(ns?ns.id:"NOT-FOUND")})')
+          R2_NAME="puresip-images" # R2 resources are identified by name alone — nothing to look up
+
+          cat <<EOF
+          ============================================================
+          Paste these into wrangler.toml — BOTH the top-level section
+          and the [env.production] section:
+          ============================================================
+
+          [[d1_databases]]
+          database_id = "$D1_UUID"
+
+          [[kv_namespaces]]
+          id = "$KV_ID"
+
+          [[r2_buckets]]
+          bucket_name = "$R2_NAME"   # R2 buckets have no separate ID
+
+          ============================================================
+          EOF
+
+          {
+            echo '## Cloudflare resource IDs'
+            echo ''
+            echo '```toml'
+            echo "database_id = \"$D1_UUID\"   # D1: puresip-db"
+            echo "id          = \"$KV_ID\"   # KV: CART_KV"
+            echo "bucket_name = \"$R2_NAME\" # R2: puresip-images"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$D1_UUID" = "NOT-FOUND" ] || [ "$KV_ID" = "NOT-FOUND" ]; then
+            echo "::warning::Some resources were not found — check the create steps above."
+          fi
 
   deploy:
     name: Deploy to Cloudflare
     runs-on: ubuntu-latest
     needs: quality
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Generate placeholder images
         run: node scripts/generate-images.mjs
 
       - name: Build frontend
-        run: pnpm build
+        run: npm run build
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
 
+      - name: Ensure Pages project exists
+        run: npx wrangler pages project create puresip --production-branch main || echo "Pages project already exists"
+
       - name: Apply D1 migrations (remote)
-        run: pnpm wrangler d1 migrations apply puresip-db --remote
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 migrations apply puresip-db --remote
 
       - name: Seed database (idempotent-ish; safe on fresh DB)
-        run: pnpm wrangler d1 execute puresip-db --remote --file packages/db/seed.sql || echo "seed skipped (already seeded)"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 execute puresip-db --remote --file packages/db/seed.sql || echo "seed skipped (already seeded)"
 
       - name: Deploy API Worker
-        run: pnpm wrangler deploy --env production
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --env production
 
       - name: Deploy Pages frontend
-        run: pnpm wrangler pages deploy apps/web/dist --project-name puresip --branch main
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy apps/web/dist --project-name puresip --branch main
 
   preview:
     name: Preview (PR)
     runs-on: ubuntu-latest
     needs: quality
     if: github.event_name == 'pull_request'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
       - name: Generate placeholder images
         run: node scripts/generate-images.mjs
       - name: Build frontend
-        run: pnpm build
+        run: npm run build
+      - name: Ensure Pages project exists
+        run: npx wrangler pages project create puresip --production-branch main || echo "Pages project already exists"
       - name: Deploy Pages preview
-        run: pnpm wrangler pages deploy apps/web/dist --project-name puresip --branch ${{ github.head_ref }}
+        run: npx wrangler pages deploy apps/web/dist --project-name puresip --branch ${{ github.head_ref }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
