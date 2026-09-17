@@ -64,66 +64,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create D1 database (if missing)
+      - name: Fill resource IDs into wrangler.toml
+        run: node scripts/fill-wrangler-ids.mjs --create
+
+      - name: Print the filled bindings
+        if: always()
         run: |
-          if npx wrangler d1 list --json | grep -q '"name": *"puresip-db"'; then
-            echo "D1 database 'puresip-db' already exists — skipping"
+          echo '## wrangler.toml resource IDs' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '```toml' >> "$GITHUB_STEP_SUMMARY"
+          grep -E 'database_id|bucket_name|^id ' wrangler.toml >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit filled wrangler.toml back to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- wrangler.toml; then
+            echo "wrangler.toml unchanged — nothing to commit"
           else
-            npx wrangler d1 create puresip-db
-          fi
-
-      - name: Create KV namespace (if missing)
-        run: |
-          if npx wrangler kv namespace list | grep -qE '"title": *"[^"]*-CART_KV"'; then
-            echo "KV namespace 'CART_KV' already exists — skipping"
-          else
-            npx wrangler kv namespace create CART_KV
-          fi
-
-      - name: Create R2 bucket (if missing)
-        run: |
-          if npx wrangler r2 bucket list | grep -q 'puresip-images'; then
-            echo "R2 bucket 'puresip-images' already exists — skipping"
-          else
-            npx wrangler r2 bucket create puresip-images
-          fi
-
-      - name: Print IDs to paste into wrangler.toml
-        run: |
-          D1_UUID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const a=JSON.parse(s);const db=a.find(x=>x.name==="puresip-db");console.log(db?db.uuid:"NOT-FOUND")})')
-          KV_ID=$(npx wrangler kv namespace list | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{const a=JSON.parse(s);const ns=a.find(x=>x.title.endsWith("-CART_KV"));console.log(ns?ns.id:"NOT-FOUND")})')
-          R2_NAME="puresip-images" # R2 resources are identified by name alone — nothing to look up
-
-          cat <<EOF
-          ============================================================
-          Paste these into wrangler.toml — BOTH the top-level section
-          and the [env.production] section:
-          ============================================================
-
-          [[d1_databases]]
-          database_id = "$D1_UUID"
-
-          [[kv_namespaces]]
-          id = "$KV_ID"
-
-          [[r2_buckets]]
-          bucket_name = "$R2_NAME"   # R2 buckets have no separate ID
-
-          ============================================================
-          EOF
-
-          {
-            echo '## Cloudflare resource IDs'
-            echo ''
-            echo '```toml'
-            echo "database_id = \"$D1_UUID\"   # D1: puresip-db"
-            echo "id          = \"$KV_ID\"   # KV: CART_KV"
-            echo "bucket_name = \"$R2_NAME\" # R2: puresip-images"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$D1_UUID" = "NOT-FOUND" ] || [ "$KV_ID" = "NOT-FOUND" ]; then
-            echo "::warning::Some resources were not found — check the create steps above."
+            git add wrangler.toml
+            git commit -m "chore: fill Cloudflare resource IDs into wrangler.toml [skip ci]"
+            git push
+            echo "✅ Pushed filled wrangler.toml — deploys will now use the real resource IDs"
           fi
 
   deploy:
