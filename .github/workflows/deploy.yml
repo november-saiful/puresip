@@ -45,6 +45,8 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+        env:
+          API_WORKER_URL: ${{ vars.API_WORKER_URL }}
 
   bootstrap:
     name: Bootstrap Cloudflare resources (run manually)
