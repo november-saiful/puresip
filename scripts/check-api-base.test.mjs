@@ -1,6 +1,6 @@
-// Tests for scripts/check-api-base.mjs — pure checks only (no filesystem, no build).
+// Tests for scripts/check-api-base.mjs — pure check only (no filesystem, no build).
 import { describe, it, expect } from 'vitest';
-import { validateApiBase, bundleContainsApiBase, VAR_NAME } from './check-api-base.mjs';
+import { validateApiBase, VAR_NAME } from './check-api-base.mjs';
 
 describe('validateApiBase', () => {
   it('rejects an unset variable', () => {
@@ -39,11 +39,5 @@ describe('validateApiBase', () => {
     const r = validateApiBase('https://puresip-api.november-saiful.workers.dev/');
     expect(r.ok).toBe(true); // trailing slash normalizes to "/"
     expect(validateApiBase('https://example.com/api').ok).toBe(false);
-  });
-});
-
-describe('bundleContainsApiBase', () => {
-  it('is false for a directory that does not exist', () => {
-    expect(bundleContainsApiBase('./definitely-not-a-real-dir', 'https://x.example')).toBe(false);
   });
 });

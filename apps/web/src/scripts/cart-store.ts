@@ -112,19 +112,22 @@ function syncRemote(): void {
   }, 600);
 }
 
+/**
+ * Base URL for CLIENT-side fetches. Returns '' (same origin) because the
+ * Astro middleware proxies /api/* to the API Worker on this domain.
+ */
 export function apiBase(): string {
-  return (import.meta.env.PUBLIC_API_BASE_URL as string | undefined) ?? '';
+  return '';
 }
 
 /**
- * Base URL for SERVER-side fetches (SSR pages). Node's fetch cannot use
- * relative URLs, so in dev we point straight at the local worker.
- * In production, PUBLIC_API_BASE_URL is set at build time.
+ * Base URL for SERVER-side fetches (SSR pages). Node/Workerd fetch cannot
+ * use relative URLs, so in dev we point straight at the local worker.
+ * In production we hit the API Worker directly (server-to-server, no CORS).
  */
 export function ssrApiBase(): string {
-  const configured = apiBase();
-  if (configured) return configured;
-  return import.meta.env.DEV ? 'http://127.0.0.1:8787' : '';
+  if (import.meta.env.DEV) return 'http://127.0.0.1:8787';
+  return (import.meta.env.API_WORKER_URL as string | undefined) ?? '';
 }
 
 export const money = (n: number): string =>

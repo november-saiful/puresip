@@ -6,8 +6,8 @@ compatibility_date = "2025-03-01"
 compatibility_flags = ["nodejs_compat"]
 
 # Set these in the Pages dashboard (or via `wrangler pages deploy --var`):
-#   PUBLIC_API_BASE_URL = https://puresip-api.<your-subdomain>.workers.dev
+#   API_WORKER_URL = https://puresip-api.<your-subdomain>.workers.dev  (SSR only)
 #   PUBLIC_IMAGES_BASE_URL = (optional R2 public URL; leave empty to serve bundled placeholder art)
 [vars]
-PUBLIC_API_BASE_URL = ""
+API_WORKER_URL = ""
 PUBLIC_IMAGES_BASE_URL = ""

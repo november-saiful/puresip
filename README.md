@@ -43,7 +43,7 @@ To go live:
    `wrangler secret put STRIPE_SECRET_KEY` (or `.dev.vars` locally).
 2. Create a Stripe webhook → `https://<your-api-domain>/api/webhooks/stripe` for
    `checkout.session.completed`, and set `STRIPE_WEBHOOK_SECRET`.
-3. Point `PUBLIC_API_BASE_URL` (Pages env var) at the deployed Worker URL and redeploy the site.
+3. Set `API_WORKER_URL` to the deployed Worker URL (e.g. `https://puresip-api.<subdomain>.workers.dev`) and redeploy the site.
 
 ## Commands
 
@@ -130,7 +130,7 @@ deploys the Worker, and deploys Pages previews for PRs.
 
 **Required GitHub secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
 **Optional:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBLISHABLE_KEY`
-(as Worker secrets), plus a `PUBLIC_API_BASE_URL` repository variable.
+(as Worker secrets), plus an `API_WORKER_URL` repository variable.
 
 ## Admin panel
 

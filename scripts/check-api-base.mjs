@@ -2,45 +2,36 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // check-api-base.mjs
 //
-// Guards the frontend build against its quietest failure mode: Astro inlines
-// PUBLIC_API_BASE_URL at build time. If it is missing, the build still exits 0
-// but SSR pages fetch a relative /api URL (which throws in the Workers
-// runtime), client cart calls hit a 404, and the storefront ships with zero
-// products. This happened in production once — never again.
+// Guards the frontend build against a missing API_WORKER_URL. This SSR-only
+// env var tells server-side pages where to fetch product data from the API
+// Worker. Without it, SSR pages silently fetch a relative /api URL (which
+// throws in the Workers runtime), and the storefront ships with zero products.
 //
 // Usage:
-//   node scripts/check-api-base.mjs             # 1) the env var must be set
-//   node scripts/check-api-base.mjs --artifact  # 2) + the built bundle under
-//                                               #    apps/web/dist must actually
-//                                               #    contain the URL (proves the
-//                                               #    build inlined it)
+//   node scripts/check-api-base.mjs   # the env var must be set and valid
 //
-// Exit codes: 0 = ok, 1 = missing/malformed var, or URL absent from the bundle.
-// The pure checks are exported so tests can run them without any environment.
+// Exit codes: 0 = ok, 1 = missing/malformed var.
+// The pure check is exported so tests can run it without any environment.
 // ─────────────────────────────────────────────────────────────────────────────
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = path.join(ROOT, 'apps', 'web', 'dist');
+export const VAR_NAME = 'API_WORKER_URL';
 
-export const VAR_NAME = 'PUBLIC_API_BASE_URL';
-
-// ── Pure checks (no I/O) — exported for tests ────────────────────────────────
+// ── Pure check (no I/O) — exported for tests ─────────────────────────────────
 export function validateApiBase(value) {
   if (!value || !value.trim()) {
     return {
       ok: false,
       message:
-        `${VAR_NAME} is not set. The build would still "succeed", but the deployed ` +
-        `site would render zero products (SSR fetch of a relative /api URL throws).`,
+        `${VAR_NAME} is not set. The build would still "succeed", but SSR pages ` +
+        `would fail to fetch product data (relative /api URLs throw in Workers).`,
     };
   }
   const trimmed = value.trim();
   let url;
   try {
-    url = new globalThis.URL(trimmed); // globalThis form: ESLint no-undef doesn't know URL globals in .mjs
+    // globalThis form: ESLint no-undef doesn't know URL globals in .mjs
+    url = new globalThis.URL(trimmed);
   } catch {
     return { ok: false, message: `${VAR_NAME}="${trimmed}" is not a valid absolute URL.` };
   }
@@ -57,27 +48,6 @@ export function validateApiBase(value) {
   return { ok: true, message: `${VAR_NAME} = ${trimmed}` };
 }
 
-function collectJsFiles(dir, out = []) {
-  for (const entry of readdirSync(dir)) {
-    const p = path.join(dir, entry);
-    if (statSync(p).isDirectory()) collectJsFiles(p, out);
-    else if (/\.(js|mjs)$/.test(entry)) out.push(p);
-  }
-  return out;
-}
-
-export function bundleContainsApiBase(distDir, apiBase) {
-  if (!existsSync(distDir)) return false;
-  for (const file of collectJsFiles(distDir)) {
-    try {
-      if (readFileSync(file, 'utf8').includes(apiBase)) return true;
-    } catch {
-      // unreadable/binary file — skip
-    }
-  }
-  return false;
-}
-
 // ── Main ─────────────────────────────────────────────────────────────────────
 function fail(msg) {
   console.error(`✘ ${msg}`);
@@ -90,24 +60,10 @@ function fail(msg) {
 }
 
 async function main() {
-  const checkArtifact = process.argv.slice(2).includes('--artifact');
   const value = process.env[VAR_NAME];
-
   const check = validateApiBase(value);
   if (!check.ok) fail(check.message);
   console.log(`✓ ${check.message}`);
-
-  if (checkArtifact) {
-    const apiBase = value.trim();
-    if (!existsSync(DIST)) fail(`Build output not found at ${DIST} — run the frontend build first.`);
-    if (!bundleContainsApiBase(DIST, apiBase)) {
-      fail(
-        `The built bundle in apps/web/dist does not contain "${apiBase}" — ` +
-          `${VAR_NAME} was not inlined into the build. Do not deploy this output.`,
-      );
-    }
-    console.log(`✓ Built bundle inlines ${VAR_NAME}`);
-  }
 }
 
 // Only run when executed directly (not when imported by tests).
