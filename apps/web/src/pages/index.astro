@@ -1,0 +1,198 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { ssrApiBase } from '../scripts/cart-store';
+import type { ProductLite } from '../components/ProductCard.astro';
+
+const SSR = ssrApiBase();
+
+interface ProductDto extends ProductLite {
+  id: number;
+  longDescription: string;
+  featured: boolean;
+  primaryImage?: string;
+}
+
+async function fetchProducts(params: string): Promise<ProductDto[]> {
+  try {
+    const res = await fetch(`${SSR}/api/products?${params}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { products: ProductDto[] };
+    return data.products ?? [];
+  } catch {
+    return [];
+  }
+}
+
+const [featured, all] = await Promise.all([
+  fetchProducts('featured=1'),
+  fetchProducts('sort=popular'),
+]);
+const colorWay = all.slice(0, 6);
+---
+
+<BaseLayout title="PureSip — Hydration, Elevated">
+  <!-- Hero -->
+  <section class="hero-mesh relative overflow-hidden">
+    <div class="container-page grid md:grid-cols-2 gap-10 items-center py-16 md:py-24">
+      <div class="reveal">
+        <span class="chip">New · 24h cold, guaranteed</span>
+        <h1 class="mt-4 font-display text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">
+          Hydration,<br /><span class="text-gradient">Elevated.</span>
+        </h1>
+        <p class="mt-5 max-w-md text-lg text-slate-text">
+          Vacuum-insulated stainless-steel bottles that keep drinks glacier-cold for 24 hours, seal
+          leak-proof, and look good doing it.
+        </p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a href="/shop" class="btn btn-primary text-base">Shop the Bottle</a>
+          <a href="/product/puresip-bottle-500ml" class="btn btn-ghost text-base">Meet the 500ml</a>
+        </div>
+        <div class="mt-8 flex items-center gap-4 text-sm">
+          <div class="flex -space-x-2">
+            {['#0E7C7B', '#4FA3D9', '#D9C7A7', '#C98A8E'].map((c) => (
+              <span class="h-8 w-8 rounded-full border-2 border-white dark:border-black/40" style={`background:${c}`}></span>
+            ))}
+          </div>
+          <p class="text-slate-text"><strong class="text-ink">10,000+</strong> happy sippers · ★ 4.8 average</p>
+        </div>
+      </div>
+      <div class="relative reveal">
+        <div class="glass rounded-3xl p-8 md:p-10 float-slow">
+          <img src="/images/bottle-500-ocean-1.svg" alt="PureSip 500ml bottle in Ocean Teal" width="520" height="620" class="mx-auto drop-shadow-2xl" />
+        </div>
+        <div class="absolute -bottom-4 left-4 glass rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg">
+          ❄️ 24h cold
+        </div>
+        <div class="absolute top-6 right-4 glass rounded-2xl px-4 py-3 text-sm font-semibold shadow-lg">
+          🔒 Leak-proof
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social proof strip -->
+  <section class="border-y" style="border-color: color-mix(in srgb, var(--ink) 8%, transparent); background: var(--card)">
+    <div class="container-page py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm font-medium text-slate-text">
+      <span>★★★★★ 4.8/5 average rating</span>
+      <span>💧 10,000+ happy sippers</span>
+      <span>♻️ 2M+ single-use bottles replaced</span>
+      <span>🚚 Free shipping over $40</span>
+    </div>
+  </section>
+
+  <!-- Featured products -->
+  <section class="container-page py-16 md:py-20">
+    <div class="reveal flex items-end justify-between gap-4">
+      <div>
+        <span class="chip">Bestsellers</span>
+        <h2 class="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight">Loved at first sip</h2>
+      </div>
+      <a href="/shop" class="btn btn-ghost !py-2 text-sm">View all →</a>
+    </div>
+    <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {featured.map((p) => <ProductCard product={p} />)}
+      {featured.length === 0 && (
+        <div class="card p-8 text-sm text-slate-text md:col-span-2 lg:col-span-3">
+          Catalog coming right up — start the API (<code>npm run dev:api</code>) and seed the DB (<code>npm run db:reset</code>) to see products here.
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- Why PureSip -->
+  <section class="container-page py-16 md:py-20">
+    <div class="reveal max-w-xl">
+      <span class="chip">Why PureSip</span>
+      <h2 class="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight">Engineered for every day</h2>
+      <p class="mt-3 text-slate-text">No gimmicks. Just the details that make a bottle you actually keep using.</p>
+    </div>
+    <div class="mt-10 grid gap-5 md:grid-cols-3">
+      {[
+        { icon: '❄️', title: '24h ice-cold', body: 'Double-wall vacuum insulation keeps drinks cold for a full day — and hot for 12.' },
+        { icon: '🔒', title: 'Leak-proof, always', body: 'Quarter-turn lid with a silicone gasket. Toss it in any bag with total confidence.' },
+        { icon: '🌱', title: 'Lighter footprint', body: '18/8 stainless steel built to replace ~217 single-use bottles a year.' },
+      ].map((f) => (
+        <div class="card card-hover p-7 reveal">
+          <div class="text-3xl">{f.icon}</div>
+          <h3 class="mt-4 font-display font-semibold text-lg">{f.title}</h3>
+          <p class="mt-2 text-sm text-slate-text">{f.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Color showcase -->
+  <section class="py-16 md:py-20" style="background: var(--card)">
+    <div class="container-page">
+      <div class="reveal max-w-xl">
+        <span class="chip">Six colors</span>
+        <h2 class="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight">Pick your palette</h2>
+      </div>
+      <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {colorWay.map((p) => {
+          const v = p.variants[0];
+          return (
+            <a href={`/product/${p.slug}`} class="group text-center">
+              <div
+                class="mx-auto aspect-square w-full rounded-3xl flex items-end justify-center overflow-hidden transition-transform duration-300 group-hover:-translate-y-1"
+                style={`background: color-mix(in srgb, ${v?.colorHex ?? '#0E7C7B'} 20%, var(--mist))`}
+              >
+                {v?.images[0] ? (
+                  <img src={v.images[0]} alt={`${p.name} in ${v.color}`} class="h-4/5 object-contain" loading="lazy" width="200" height="260" />
+                ) : (
+                  <div class="mb-6 h-20 w-10 rounded-xl" style={`background:${v?.colorHex}`}></div>
+                )}
+              </div>
+              <p class="mt-3 text-sm font-semibold">{v?.color}</p>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="container-page py-16 md:py-20">
+    <div class="reveal max-w-xl">
+      <span class="chip">Reviews</span>
+      <h2 class="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight">Sippers, delighted</h2>
+    </div>
+    <div class="mt-10 grid gap-5 md:grid-cols-3">
+      {[
+        { q: 'Ice from 7am was still clinking at 4pm. I did not believe it until it happened.', a: 'Maya R.', m: 'Verified buyer' },
+        { q: 'The powder coat grip is the detail I did not know I needed. Gym sessions sold.', a: 'Daniel K.', m: 'Verified buyer' },
+        { q: 'One fill lasts my whole 12-hour shift. Bought three more for the family.', a: 'Elena V.', m: 'Verified buyer' },
+      ].map((t) => (
+        <figure class="card p-7 reveal">
+          <div class="text-amber-400" aria-hidden="true">★★★★★</div>
+          <blockquote class="mt-3 text-[0.95rem] leading-relaxed">“{t.q}”</blockquote>
+          <figcaption class="mt-4 text-sm text-slate-text"><strong class="text-ink">{t.a}</strong> · {t.m}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <!-- Sustainability -->
+  <section class="container-page pb-20">
+    <div class="reveal card overflow-hidden">
+      <div class="grid md:grid-cols-2">
+        <div class="p-8 md:p-12">
+          <span class="chip">Sustainability</span>
+          <h2 class="mt-3 font-display text-3xl font-bold tracking-tight">One bottle. Hundreds fewer in the bin.</h2>
+          <p class="mt-4 text-slate-text">
+            The average single-use bottle user goes through 217 per year. One PureSip replaces them
+            all — 18/8 recyclable stainless steel, plastic-free packaging, and carbon-neutral
+            shipping on every order.
+          </p>
+          <a href="/about" class="btn btn-ghost mt-6">Read our mission</a>
+        </div>
+        <div class="relative min-h-56" style="background: linear-gradient(140deg, var(--brand), var(--aqua))">
+          <div class="absolute inset-0 grid place-items-center text-white/90 text-6xl font-display font-extrabold">
+            −217
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

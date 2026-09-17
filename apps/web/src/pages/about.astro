@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="About" description="The PureSip story — why we build bottles that outlast the habit of single-use.">
+  <section class="container-page py-14 max-w-3xl">
+    <span class="chip">Our story</span>
+    <h1 class="mt-3 font-display text-4xl font-bold tracking-tight">Hydration, Elevated.</h1>
+    <p class="mt-5 text-lg text-slate-text">
+      PureSip started with a simple irritation: the good bottles were dull and the pretty bottles
+      leaked. We wanted one bottle that nailed both — premium enough to leave on your desk,
+      dependable enough to live at the bottom of your bag.
+    </p>
+
+    <div class="mt-10 grid gap-5 sm:grid-cols-3">
+      {[
+        { n: '24h', l: 'Cold retention, tested batch by batch' },
+        { n: '10k+', l: 'Happy sippers and counting' },
+        { n: '2M+', l: 'Single-use bottles displaced' },
+      ].map((s) => (
+        <div class="card p-6 text-center">
+          <p class="font-display text-3xl font-extrabold text-brand">{s.n}</p>
+          <p class="mt-2 text-sm text-slate-text">{s.l}</p>
+        </div>
+      ))}
+    </div>
+
+    <h2 class="mt-14 font-display text-2xl font-bold tracking-tight">Materials that earn their keep</h2>
+    <p class="mt-4 text-slate-text leading-relaxed">
+      Every PureSip body is 18/8 food-grade stainless steel — the same grade used in commercial
+      kitchens — with a powder-coat finish that is grippy, sweat-free, and free of BPA and
+      phthalates. Lids are polypropylene with food-grade silicone seals, and every component that
+      touches your drink is independently lab-tested.
+    </p>
+
+    <h2 class="mt-10 font-display text-2xl font-bold tracking-tight">The eco math</h2>
+    <p class="mt-4 text-slate-text leading-relaxed">
+      The average person who drinks bottled water goes through 217 single-use bottles a year. One
+      PureSip, used daily, erases that entirely. Our packaging is plastic-free and recyclable, our
+      manufacturing partners run on renewable electricity, and we fund ocean-plastic recovery for
+      every order shipped — carbon-neutral, door to door.
+    </p>
+
+    <div class="card mt-12 overflow-hidden">
+      <div class="p-8 md:p-10" style="background: linear-gradient(135deg, var(--brand), var(--aqua))">
+        <h2 class="text-white font-display text-2xl font-bold">Join 10,000+ sippers</h2>
+        <p class="mt-2 text-white/85 text-sm max-w-md">Make the last single-use bottle you ever buy the one before this one.</p>
+        <a href="/shop" class="btn mt-6 bg-white text-[var(--brand)] hover:bg-white/90">Shop the Bottle</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

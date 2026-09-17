@@ -1,0 +1,165 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { ssrApiBase } from '../scripts/cart-store';
+import type { ProductLite } from '../components/ProductCard.astro';
+
+const SSR = ssrApiBase();
+
+interface ProductDto extends ProductLite {
+  id: number;
+  longDescription: string;
+  featured: boolean;
+}
+
+export interface ProductsResponse {
+  products: ProductDto[];
+}
+
+const url = new URL(Astro.url);
+const category = url.searchParams.get('category') ?? '';
+const q = url.searchParams.get('q') ?? '';
+const sort = url.searchParams.get('sort') ?? 'popular';
+const color = url.searchParams.get('color') ?? '';
+
+const params = new URLSearchParams();
+if (category) params.set('category', category);
+if (q) params.set('q', q);
+if (sort) params.set('sort', sort);
+if (color) params.set('color', color);
+
+let products: ProductDto[] = [];
+try {
+  const res = await fetch(`${SSR}/api/products?${params.toString()}`);
+  if (res.ok) {
+    const data = (await res.json()) as ProductsResponse;
+    products = data.products ?? [];
+  }
+} catch {
+  products = [];
+}
+
+const categories = [
+  { id: '', label: 'All' },
+  { id: 'bottles', label: 'Bottles' },
+  { id: 'tumblers', label: 'Tumblers' },
+  { id: 'accessories', label: 'Accessories' },
+];
+const sorts = [
+  { id: 'popular', label: 'Most popular' },
+  { id: 'newest', label: 'Newest' },
+  { id: 'price_asc', label: 'Price: low to high' },
+  { id: 'price_desc', label: 'Price: high to low' },
+];
+const colorList = ['Ocean Teal', 'Glacier Blue', 'Sandstone', 'Charcoal', 'Rosewood', 'Moss'];
+
+function shopUrl(overrides: Record<string, string>): string {
+  const p = new URLSearchParams();
+  const base: Record<string, string> = { category, q, sort, color };
+  const merged = { ...base, ...overrides };
+  for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
+  const s = p.toString();
+  return s ? `/shop?${s}` : '/shop';
+}
+---
+
+<BaseLayout title="Shop" description="All PureSip bottles, tumblers and accessories — filter by category, color and price.">
+  <section class="container-page py-10">
+    <div class="max-w-xl">
+      <span class="chip">Catalog</span>
+      <h1 class="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight">Shop PureSip</h1>
+      <p class="mt-2 text-slate-text">Insulated bottles, tumblers, and the accessories that make them better.</p>
+    </div>
+
+    <form action="/shop" method="get" class="mt-8 flex flex-wrap gap-3 items-center">
+      <input type="text" name="q" value={q} placeholder="Search products…" class="field max-w-xs" aria-label="Search products" />
+      {category && <input type="hidden" name="category" value={category} />}
+      {sort && <input type="hidden" name="sort" value={sort} />}
+      <button class="btn btn-ghost !py-2.5" type="submit">Search</button>
+    </form>
+
+    <div class="mt-6 flex flex-wrap items-center gap-2" role="group" aria-label="Category filters">
+      {categories.map((cat) => (
+        <a
+          href={shopUrl({ category: cat.id })}
+          class:list={[
+            'rounded-full px-4 py-1.5 text-sm font-semibold border transition-colors',
+            category === cat.id
+              ? 'bg-brand text-white border-transparent'
+              : 'border-[color-mix(in_srgb,var(--ink)_15%,transparent)] hover:border-brand hover:text-brand',
+          ]}
+        >
+          {cat.label}
+        </a>
+      ))}
+      <span class="mx-2 hidden sm:block w-px h-5" style="background: color-mix(in srgb, var(--ink) 15%, transparent)"></span>
+      <label for="sort" class="text-sm text-slate-text">Sort</label>
+      <select
+        id="sort"
+        class="field !w-auto !py-1.5 text-sm"
+        onchange="window.location.href = this.value"
+      >
+        {sorts.map((s) => (
+          <option value={shopUrl({ sort: s.id })} selected={sort === s.id}>{s.label}</option>
+        ))}
+      </select>
+    </div>
+
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <a
+        href={shopUrl({ color: '' })}
+        class:list={[
+          'rounded-full px-3.5 py-1 text-xs font-semibold border transition-colors',
+          !color ? 'bg-brand text-white border-transparent' : 'hover:border-brand',
+        ]}
+      >
+        All colors
+      </a>
+      {colorList.map((col) => {
+        const hex = {
+          'Ocean Teal': '#0E7C7B',
+          'Glacier Blue': '#4FA3D9',
+          Sandstone: '#D9C7A7',
+          Charcoal: '#37424C',
+          Rosewood: '#C98A8E',
+          Moss: '#7C9A6D',
+        }[col] ?? '#999';
+        return (
+          <a
+            href={shopUrl({ color: col })}
+            class:list={[
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border transition-colors',
+              color === col ? 'border-brand ring-2 ring-[color-mix(in_srgb,var(--brand)_35%,transparent)]' : 'hover:border-brand',
+            ]}
+            aria-pressed={color === col}
+          >
+            <span class="h-3 w-3 rounded-full border border-black/10" style={`background:${hex}`}></span>
+            {col}
+          </a>
+        );
+      })}
+    </div>
+
+    {products.length === 0 ? (
+      <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1, 2, 3, 4, 5].map(() => (
+          <div>
+            <div class="skeleton aspect-square w-full"></div>
+            <div class="skeleton h-4 w-3/4 mt-4"></div>
+            <div class="skeleton h-4 w-1/2 mt-2"></div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {products.map((p) => <ProductCard product={p} />)}
+      </div>
+    )}
+
+    {products.length === 0 && (
+      <p class="mt-6 text-sm text-slate-text">
+        No products matched. If this is a fresh checkout, run <code class="chip">npm run db:reset</code> to seed the catalog.
+      </p>
+    )}
+  </section>
+</BaseLayout>

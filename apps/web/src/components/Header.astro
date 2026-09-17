@@ -1,0 +1,82 @@
+---
+// Sticky glass header with nav, theme toggle, cart button + animated badge.
+const links = [
+  { href: '/shop', label: 'Shop' },
+  { href: '/about', label: 'About' },
+  { href: '/faq', label: 'FAQ' },
+  { href: '/contact', label: 'Contact' },
+];
+const path = Astro.url.pathname;
+---
+
+<header class="sticky top-0 z-50 glass">
+  <div class="container-page flex items-center justify-between gap-4 py-3.5">
+    <a href="/" class="flex items-center gap-2 font-display font-bold text-lg tracking-tight">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="8" y="4" width="16" height="24" rx="6" fill="url(#lg)" />
+        <path d="M11 13h10" stroke="white" stroke-width="2" stroke-linecap="round" />
+        <defs>
+          <linearGradient id="lg" x1="8" y1="4" x2="24" y2="28">
+            <stop stop-color="#0E7C7B" />
+            <stop offset="1" stop-color="#36B3AE" />
+          </linearGradient>
+        </defs>
+      </svg>
+      PureSip
+    </a>
+
+    <nav class="hidden md:flex items-center gap-6 text-sm font-medium" aria-label="Main">
+      {links.map((l) => (
+        <a
+          href={l.href}
+          class:list={['transition-colors hover:text-brand', path === l.href ? 'text-brand' : 'text-slate-text']}
+        >
+          {l.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        data-theme-toggle
+        class="rounded-full p-2.5 hover:bg-mist transition-colors"
+        aria-label="Toggle dark mode"
+      >
+        <span data-theme-icon aria-hidden="true">🌙</span>
+      </button>
+      <button
+        type="button"
+        data-open-cart
+        class="relative rounded-full p-2.5 hover:bg-mist transition-colors"
+        aria-label="Open cart"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.5 8h11l1 12.1a1.8 1.8 0 0 1-1.8 1.9H7.3a1.8 1.8 0 0 1-1.8-1.9L6.5 8Z" />
+          <path d="M9 10V6.5a3 3 0 0 1 6 0V10" />
+        </svg>
+        <span
+          data-cart-count
+          class="hidden absolute -top-0.5 -right-0.5 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-brand text-white text-[0.68rem] font-bold flex items-center justify-center"
+        ></span>
+      </button>
+      <a href="/shop" class="btn btn-primary hidden sm:inline-flex !py-2 !px-5 text-sm">Shop now</a>
+      <button type="button" class="md:hidden rounded-full p-2.5 hover:bg-mist" aria-label="Open menu" data-mobile-menu>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="hidden md:hidden" data-mobile-panel>
+    <nav class="container-page pb-4 flex flex-col gap-1 text-sm font-medium" aria-label="Mobile">
+      {links.map((l) => (
+        <a href={l.href} class="rounded-xl px-3 py-2.5 hover:bg-mist">{l.label}</a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<script>
+  document.querySelector('[data-mobile-menu]')?.addEventListener('click', () => {
+    document.querySelector('[data-mobile-panel]')?.classList.toggle('hidden');
+  });
+</script>

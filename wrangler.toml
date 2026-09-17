@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PureSip API Worker — served under /api/*
+# Deploy:  wrangler deploy          (dev/preview bindings from this top level)
+#          wrangler deploy --env production
+#
+# Replace the placeholder IDs after running:
+#   wrangler d1 create puresip-db
+#   wrangler kv namespace create CART_KV
+#   wrangler r2 bucket create puresip-images
+# ─────────────────────────────────────────────────────────────────────────────
+name = "puresip-api"
+main = "apps/api/src/index.ts"
+compatibility_date = "2025-03-01"
+
+[vars]
+DEMO_MODE = "true"
+ALLOWED_ORIGINS = "http://localhost:4321,http://127.0.0.1:4321,https://puresip.pages.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "puresip-db"
+database_id = "00000000-0000-0000-0000-000000000000" # ← replace with real D1 id
+migrations_dir = "packages/db/migrations"
+
+[[kv_namespaces]]
+binding = "CART_KV"
+id = "00000000000000000000000000000000" # ← replace with real KV namespace id
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "puresip-images"
+
+[env.production]
+name = "puresip-api"
+main = "apps/api/src/index.ts"
+compatibility_date = "2025-03-01"
+
+[env.production.vars]
+DEMO_MODE = "false"
+ALLOWED_ORIGINS = "https://puresip.pages.dev,https://puresip.com"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "puresip-db"
+database_id = "00000000-0000-0000-0000-000000000000" # ← replace
+migrations_dir = "packages/db/migrations"
+
+[[env.production.kv_namespaces]]
+binding = "CART_KV"
+id = "00000000000000000000000000000000" # ← replace
+
+[[env.production.r2_buckets]]
+binding = "IMAGES"
+bucket_name = "puresip-images"

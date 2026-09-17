@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/sora';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CartDrawer from '../components/CartDrawer.astro';
+import '../scripts/ui';
+
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = 'Premium insulated stainless-steel bottles and hydration accessories. Cold for 24 hours, leak-proof forever. Hydration, Elevated.',
+} = Astro.props;
+const siteUrl = Astro.site?.origin ?? 'https://puresip.pages.dev';
+const ogImage = `${siteUrl}/og.svg`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · PureSip</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, siteUrl)} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PureSip" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0E7C7B" />
+    <script is:inline>
+      // Set theme before paint to avoid flash.
+      const stored = localStorage.getItem('ps_theme');
+      const dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', dark);
+    </script>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'PureSip',
+      url: siteUrl,
+      logo: `${siteUrl}/favicon.svg`,
+      slogan: 'Hydration, Elevated.',
+    })} />
+  </head>
+  <body class="min-h-dvh flex flex-col">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 btn btn-primary">Skip to content</a>
+    <Header />
+    <main id="main" class="flex-1"><slot /></main>
+    <Footer />
+    <CartDrawer />
+    <div id="toast-root" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 items-center pointer-events-none" aria-live="polite"></div>
+  </body>
+</html>

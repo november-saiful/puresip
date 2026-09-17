@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+.astro/
+.wrangler/
+.dev.vars
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# misc
+.vitest/
+coverage/

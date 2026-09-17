@@ -1,0 +1,48 @@
+{
+  "name": "puresip",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PureSip — Hydration, Elevated. Cloudflare-native e-commerce (Astro + Hono Workers + D1/KV/R2 + Stripe).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "wrangler dev --port 8787",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p apps/api && tsc --noEmit -p packages/db && npm run check -w apps/web",
+    "lint": "eslint .",
+    "db:migrate": "wrangler d1 migrations apply puresip-db --local",
+    "db:seed": "wrangler d1 execute puresip-db --local --file packages/db/seed.sql",
+    "db:reset": "wrangler d1 execute puresip-db --local --file packages/db/migrations/0001_init.sql && npm run db:seed",
+    "db:migrate:remote": "wrangler d1 migrations apply puresip-db --remote",
+    "db:seed:remote": "wrangler d1 execute puresip-db --remote --file packages/db/seed.sql",
+    "images:generate": "node scripts/generate-images.mjs",
+    "images:upload": "node scripts/upload-images.mjs",
+    "deploy:worker": "wrangler deploy",
+    "deploy:pages": "npm run build && cd apps/web && wrangler pages deploy"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.27.0": true,
+    "workerd@1.20260114.0": true
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.20.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

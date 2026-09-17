@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { money, ssrApiBase } from '../../scripts/cart-store';
+
+interface OrderDto {
+  id: string;
+  email: string;
+  name: string;
+  shippingMethod: string;
+  subtotal: number;
+  discount: number;
+  shippingCost: number;
+  total: number;
+  promoCode: string | null;
+  status: string;
+  paymentMode: string;
+  createdAt: string;
+}
+interface ItemDto {
+  name: string;
+  color: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+const { id } = Astro.params;
+let order: OrderDto | null = null;
+let items: ItemDto[] = [];
+const API = ssrApiBase();
+
+try {
+  const res = await fetch(`${API}/api/orders/${id}`);
+  if (res.ok) {
+    const data = (await res.json()) as { order: OrderDto; items: ItemDto[] };
+    order = data.order;
+    items = data.items ?? [];
+  }
+} catch {
+  order = null;
+}
+
+const statusCopy: Record<string, { label: string; emoji: string; note: string }> = {
+  pending: { label: 'Pending payment', emoji: '⏳', note: 'We are waiting on payment confirmation.' },
+  paid: { label: 'Paid', emoji: '✅', note: 'Payment confirmed — your order is being prepared.' },
+  shipped: { label: 'Shipped', emoji: '📦', note: 'Your PureSip is on its way.' },
+  delivered: { label: 'Delivered', emoji: '🎉', note: 'Delivered. Go hydrate!' },
+  cancelled: { label: 'Cancelled', emoji: '🚫', note: 'This order was cancelled.' },
+};
+const status = order ? (statusCopy[order.status] ?? statusCopy['pending']!) : null;
+---
+
+<BaseLayout title={`Order ${id}`} description="Your PureSip order confirmation.">
+  <section class="container-page py-14 max-w-2xl">
+    {order ? (
+      <>
+        <div class="text-center">
+          <div class="text-5xl">{status?.emoji}</div>
+          <h1 class="mt-4 font-display text-3xl font-bold tracking-tight">Order {order.id}</h1>
+          <p class="mt-2 text-slate-text">{status?.note}</p>
+          <span class="chip mt-3 capitalize">{status?.label} · {order.paymentMode === 'demo' ? 'demo payment' : 'Stripe'}</span>
+        </div>
+
+        <div class="card mt-8 p-6 md:p-8">
+          <h2 class="font-display font-bold text-lg">Items</h2>
+          <div class="mt-4 space-y-3 text-sm">
+            {items.map((i) => (
+              <div class="flex justify-between gap-3">
+                <span><span class="font-medium">{i.qty} × {i.name}</span> <span class="text-slate-text">· {i.color}</span></span>
+                <span class="font-semibold">{money(i.lineTotal)}</span>
+              </div>
+            ))}
+          </div>
+          <div class="mt-5 pt-4 border-t space-y-2 text-sm" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+            <div class="flex justify-between"><span class="text-slate-text">Subtotal</span><span>{money(order.subtotal)}</span></div>
+            {order.discount > 0 && (
+              <div class="flex justify-between"><span class="text-slate-text">Discount {order.promoCode ? `(${order.promoCode})` : ''}</span><span class="text-brand font-semibold">−{money(order.discount)}</span></div>
+            )}
+            <div class="flex justify-between"><span class="text-slate-text">Shipping ({order.shippingMethod})</span><span>{order.shippingCost === 0 ? 'FREE' : money(order.shippingCost)}</span></div>
+            <div class="flex justify-between font-bold text-base pt-1"><span>Total</span><span>{money(order.total)}</span></div>
+          </div>
+        </div>
+
+        <div class="card mt-4 p-6 text-sm text-slate-text">
+          <p><strong class="text-ink">Confirmation sent to</strong> {order.email}</p>
+          <p class="mt-1">Keep this page — order status updates here as we pack and ship.</p>
+        </div>
+
+        <div class="mt-8 text-center">
+          <a href="/shop" class="btn btn-primary">Keep shopping</a>
+        </div>
+      </>
+    ) : (
+      <div class="card p-12 text-center">
+        <div class="text-5xl">🔍</div>
+        <h1 class="mt-4 font-display text-2xl font-bold">Order not found</h1>
+        <p class="mt-2 text-sm text-slate-text">Double-check the link, or contact us if you think this is a mistake.</p>
+        <a href="/contact" class="btn btn-ghost mt-6">Contact support</a>
+      </div>
+    )}
+  </section>
+</BaseLayout>

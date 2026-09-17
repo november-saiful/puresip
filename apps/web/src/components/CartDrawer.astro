@@ -1,0 +1,39 @@
+---
+// Slide-in cart drawer. Rendered on every page; populated on open by cart-store.
+---
+
+<div id="cart-drawer" class="hidden fixed inset-0 z-[60] opacity-0 transition-opacity duration-250">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+  <aside
+    id="cart-drawer-panel"
+    class="absolute right-0 top-0 h-full w-full max-w-md translate-x-full transition-transform duration-250 ease-out"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Shopping cart"
+  >
+    <div class="h-full flex flex-col" style="background: var(--paper)">
+      <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+        <p class="font-display font-bold text-lg">Your cart</p>
+        <button type="button" data-drawer-close class="rounded-full p-2 hover:bg-mist transition-colors" aria-label="Close cart">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div id="drawer-items" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"><!-- populated --></div>
+      <div class="border-t px-6 py-4 space-y-3" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+        <div class="flex justify-between text-sm text-slate-text">
+          <span>Subtotal</span>
+          <span id="drawer-subtotal" class="font-semibold text-ink">$0.00</span>
+        </div>
+        <a href="/cart" class="btn btn-ghost w-full" data-drawer-close>View cart</a>
+        <a href="/checkout" class="btn btn-primary w-full">Checkout</a>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // Client-side behaviors: drawer open/close + population from the cart store.
+  // (Imports must live in a <script> tag — frontmatter imports never reach the browser.)
+  import '../scripts/ui';
+  import '../scripts/cart-drawer';
+</script>

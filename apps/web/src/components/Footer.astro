@@ -1,0 +1,85 @@
+---
+// Footer with inline newsletter signup (posts to /api/newsletter).
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+  <div class="container-page py-14 grid gap-10 md:grid-cols-4">
+    <div class="md:col-span-2">
+      <p class="font-display font-bold text-xl">PureSip</p>
+      <p class="mt-2 max-w-sm text-sm text-slate-text">
+        Premium insulated hydration for every day — cold for 24 hours, leak-proof forever, and built
+        to replace hundreds of single-use bottles.
+      </p>
+      <form class="mt-6 flex gap-2 max-w-sm" data-newsletter aria-label="Newsletter signup">
+        <input
+          type="email"
+          name="email"
+          required
+          placeholder="you@example.com"
+          class="field flex-1"
+          aria-label="Email address"
+        />
+        <button class="btn btn-primary !px-5" type="submit">Join</button>
+      </form>
+      <p class="mt-2 text-xs text-slate-text">One email a month. Unsubscribe anytime.</p>
+    </div>
+    <nav aria-label="Shop links">
+      <p class="font-semibold text-sm mb-3">Shop</p>
+      <ul class="space-y-2 text-sm text-slate-text">
+        <li><a class="hover:text-brand" href="/shop?category=bottles">Bottles</a></li>
+        <li><a class="hover:text-brand" href="/shop?category=tumblers">Tumblers</a></li>
+        <li><a class="hover:text-brand" href="/shop?category=accessories">Accessories</a></li>
+        <li><a class="hover:text-brand" href="/cart">Cart</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Company links">
+      <p class="font-semibold text-sm mb-3">Company</p>
+      <ul class="space-y-2 text-sm text-slate-text">
+        <li><a class="hover:text-brand" href="/about">About & Sustainability</a></li>
+        <li><a class="hover:text-brand" href="/faq">FAQ</a></li>
+        <li><a class="hover:text-brand" href="/contact">Contact</a></li>
+        <li><a class="hover:text-brand" href="/privacy">Privacy</a></li>
+        <li><a class="hover:text-brand" href="/terms">Terms</a></li>
+        <li><a class="hover:text-brand" href="/refunds">Refunds</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="container-page pb-8 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-text">
+    <p>© {year} PureSip. Hydration, Elevated.</p>
+    <p>Built on Cloudflare · 100% carbon-neutral edges</p>
+  </div>
+</footer>
+
+<script>
+  import { toast } from '../scripts/ui';
+  import { apiBase } from '../scripts/cart-store';
+
+  document.querySelectorAll<HTMLFormElement>('[data-newsletter]').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = form.querySelector<HTMLInputElement>('input[name="email"]');
+      if (!input?.value) return;
+      const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(`${apiBase()}/api/newsletter`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: input.value }),
+        });
+        const data = (await res.json()) as { message?: string; error?: { message: string } };
+        if (res.ok) {
+          toast(data.message ?? 'Subscribed!');
+          input.value = '';
+        } else {
+          toast(data.error?.message ?? 'Something went wrong', 'error');
+        }
+      } catch {
+        toast('Network error — try again', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  });
+</script>

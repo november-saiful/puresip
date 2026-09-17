@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+interface Section {
+  h: string;
+  p: string;
+}
+
+const docs: Record<string, { title: string; sections: Section[] }> = {
+  privacy: {
+    title: 'Privacy Policy',
+    sections: [
+      { h: 'What we collect', p: 'We collect the information needed to fulfill your order: name, email, shipping address, and order contents. Cart contents are stored in a session cookie and our KV store. We do not sell personal information.' },
+      { h: 'Payments', p: 'Payments are processed by Stripe. We never see or store your full card details — only a payment status from Stripe.' },
+      { h: 'Cookies & analytics', p: 'We use one first-party cookie (ps_cart) to remember your cart and localStorage for cart/theme preferences. No third-party ad trackers.' },
+      { h: 'Contact', p: 'Questions about your data? Email privacy@puresip.example and we will respond within one business day.' },
+    ],
+  },
+  terms: {
+    title: 'Terms of Service',
+    sections: [
+      { h: 'The short version', p: 'Be kind, do not resell our content, and remember that using PureSip products to store anything other than drinks voids more than the warranty.' },
+      { h: 'Orders & pricing', p: 'Prices are in USD and may change without notice. If we mis-price an item, we will contact you before charging anything. Orders can be cancelled until they ship.' },
+      { h: 'Warranty', p: 'PureSip bottles carry a 2-year warranty against manufacturing defects. Accidents, dishwashers (for the body), and siblings are not manufacturing defects.' },
+      { h: 'Liability', p: 'The site and products are provided as-is to the fullest extent permitted by law. Our total liability is limited to the amount you paid for your order.' },
+    ],
+  },
+  refunds: {
+    title: 'Refund Policy',
+    sections: [
+      { h: '30-day promise', p: 'Not sipping happier? Return any unused product within 30 days for a full refund. Used-but-regretted is also fine within 14 days if it is clean.' },
+      { h: 'How refunds work', p: 'Email support@puresip.example with your order ID (it starts with PS-). We send a prepaid label for defective items; otherwise returns ship to our returns center. Refunds land 5–10 business days after we receive the item.' },
+      { h: 'Damaged or wrong item', p: 'We replace it immediately — send a photo and your order ID, no return needed for most cases.' },
+    ],
+  },
+};
+
+const { doc } = Astro.params;
+const entry = doc ? docs[doc] : undefined;
+if (!entry) {
+  return Astro.redirect('/404');
+}
+const { title, sections } = entry;
+---
+
+<BaseLayout title={title} description={`PureSip ${title.toLowerCase()} — plain-language legal, kept short.`}>
+  <section class="container-page py-14 max-w-3xl">
+    <h1 class="font-display text-4xl font-bold tracking-tight">{title}</h1>
+    <p class="mt-2 text-sm text-slate-text">Last updated: September 2026</p>
+    <div class="mt-8 space-y-8">
+      {sections.map((s) => (
+        <section>
+          <h2 class="font-display text-xl font-bold">{s.h}</h2>
+          <p class="mt-2 text-slate-text leading-relaxed">{s.p}</p>
+        </section>
+      ))}
+    </div>
+    <p class="mt-10 text-sm text-slate-text">
+      Also read: <a href="/legal/privacy" class="text-brand hover:underline">Privacy</a> ·
+      <a href="/legal/terms" class="text-brand hover:underline">Terms</a> ·
+      <a href="/legal/refunds" class="text-brand hover:underline">Refunds</a>
+    </p>
+  </section>
+</BaseLayout>

@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404" description="This page slipped through the cracks — or the bottle cap.">
+  <section class="container-page py-24 text-center max-w-lg">
+    <div class="mx-auto w-24 h-40 rounded-[2rem] grid place-items-center float-slow"
+         style="background: linear-gradient(160deg, var(--brand), var(--aqua)); transform: rotate(6deg)">
+      <span class="text-white font-display font-extrabold text-3xl">404</span>
+    </div>
+    <h1 class="mt-8 font-display text-3xl font-bold tracking-tight">Well, this is dry.</h1>
+    <p class="mt-3 text-slate-text">
+      The page you are looking for evaporated. Your bottle, however, is still exactly where you left it — full.
+    </p>
+    <div class="mt-8 flex justify-center gap-3">
+      <a href="/" class="btn btn-primary">Back home</a>
+      <a href="/shop" class="btn btn-ghost">Shop the Bottle</a>
+    </div>
+  </section>
+</BaseLayout>

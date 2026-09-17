@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Contact" description="Talk to the PureSip team — we reply within one business day.">
+  <section class="container-page py-14 max-w-2xl">
+    <span class="chip">Contact</span>
+    <h1 class="mt-3 font-display text-4xl font-bold tracking-tight">Say hello</h1>
+    <p class="mt-3 text-slate-text">Questions about an order, a product, or a partnership — we answer within one business day.</p>
+
+    <form id="contact-form" class="card mt-8 p-6 md:p-8 grid gap-4">
+      <label class="text-sm font-semibold">Name
+        <input name="name" required minlength="2" class="field mt-1.5" placeholder="Your name" />
+      </label>
+      <label class="text-sm font-semibold">Email
+        <input name="email" type="email" required class="field mt-1.5" placeholder="you@example.com" />
+      </label>
+      <label class="text-sm font-semibold">Subject
+        <input name="subject" required minlength="2" class="field mt-1.5" placeholder="Order question, wholesale, press…" />
+      </label>
+      <label class="text-sm font-semibold">Message
+        <textarea name="message" required minlength="10" rows="5" class="field mt-1.5" placeholder="How can we help?"></textarea>
+      </label>
+      <p id="contact-status" class="text-sm" hidden></p>
+      <button type="submit" class="btn btn-primary justify-self-start">Send message</button>
+    </form>
+  </section>
+
+  <script>
+    import '../scripts/contact-page';
+  </script>
+</BaseLayout>

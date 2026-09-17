@@ -1,0 +1,6 @@
+# Copy to `.dev.vars` (git-ignored) for local `wrangler dev` secrets.
+# With no STRIPE_SECRET_KEY (and DEMO_MODE=true from wrangler.toml) checkout runs in demo mode.
+
+ADMIN_TOKEN="dev-admin-token-123"
+STRIPE_SECRET_KEY=""
+STRIPE_WEBHOOK_SECRET=""

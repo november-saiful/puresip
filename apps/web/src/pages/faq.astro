@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [
+  {
+    q: 'How long does PureSip keep drinks cold?',
+    a: '24 hours for cold drinks and 12 hours for hot, thanks to double-wall vacuum insulation. Filled with ice, you will still hear cubes rattling the next morning.',
+  },
+  {
+    q: 'Is it really leak-proof?',
+    a: 'Yes — the lid seals with a quarter-turn and a food-grade silicone gasket. It is designed to be tossed into a bag sideways, and it survives it.',
+  },
+  {
+    q: 'Can I put it in the dishwasher?',
+    a: 'The body prefers a hand-wash (a bottle brush makes it a 30-second job); the lids are top-rack dishwasher-safe. Never microwave or freeze the bottle.',
+  },
+  {
+    q: 'Does it fit in cup holders?',
+    a: 'The 500ml and Tumbler fit standard car cup holders. The 750ml fits most — measure if yours is snug.',
+  },
+  {
+    q: 'What is your return policy?',
+    a: '30 days, no questions asked. If you are not sipping happier, we refund the full amount — see the refund policy page for details.',
+  },
+  {
+    q: 'Do the lids interchange?',
+    a: 'They do. The Straw Lid and Sports Cap both screw onto any PureSip Bottle, so one bottle can be a gym bottle, a coffee companion, and a desk companion.',
+  },
+  {
+    q: 'Is shipping free?',
+    a: 'Standard shipping is $4.99 and free on orders over $40. Express (1–2 business days) is $9.99.',
+  },
+  {
+    q: 'Where do you ship?',
+    a: 'Across the US and Canada from our closest fulfillment center, carbon-neutral on every route.',
+  },
+];
+---
+
+<BaseLayout title="FAQ" description="Answers about insulation, lids, shipping, returns and care for PureSip bottles.">
+  <section class="container-page py-14 max-w-3xl">
+    <span class="chip">FAQ</span>
+    <h1 class="mt-3 font-display text-4xl font-bold tracking-tight">Questions, answered</h1>
+    <div class="mt-10 divide-y" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+      {faqs.map((f) => (
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between gap-4 font-semibold list-none">
+            {f.q}
+            <span class="text-brand text-2xl leading-none transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+          </summary>
+          <p class="mt-3 text-slate-text leading-relaxed">{f.a}</p>
+        </details>
+      ))}
+    </div>
+    <p class="mt-10 text-sm text-slate-text">
+      Still curious? <a href="/contact" class="text-brand font-semibold hover:underline">Ask us directly →</a>
+    </p>
+  </section>
+</BaseLayout>

@@ -1,0 +1,275 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { ssrApiBase } from '../../scripts/cart-store';
+import type { ProductLite, VariantLite } from '../../components/ProductCard.astro';
+
+interface ProductDto extends ProductLite {
+  id: number;
+  longDescription: string;
+  featured: boolean;
+}
+
+interface ReviewDto {
+  id: number;
+  rating: number;
+  title: string;
+  body: string;
+  authorName: string;
+  createdAt: string;
+}
+
+const API = ssrApiBase();
+const { slug } = Astro.params;
+
+let product: ProductDto | null = null;
+let reviews: ReviewDto[] = [];
+try {
+  const res = await fetch(`${API}/api/products/${slug}`);
+  if (res.ok) {
+    const data = (await res.json()) as { product: ProductDto; reviews: ReviewDto[] };
+    product = data.product;
+    reviews = data.reviews ?? [];
+  }
+} catch {
+  product = null;
+}
+
+if (!product) {
+  return Astro.redirect('/404');
+}
+
+const url = new URL(Astro.url);
+const siteUrl = Astro.site?.origin ?? url.origin;
+
+let related: ProductDto[] = [];
+try {
+  const res = await fetch(`${API}/api/products?category=${product.category}`);
+  if (res.ok) {
+    const data = (await res.json()) as ProductsResponse;
+    related = (data.products ?? []).filter((p) => p.slug !== product?.slug).slice(0, 3);
+  }
+} catch {
+  related = [];
+}
+interface ProductsResponse {
+  products: ProductDto[];
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.shortDescription,
+  image: product.variants[0]?.images.map((i: string) => `${siteUrl}${i}`) ?? [],
+  brand: { '@type': 'Brand', name: 'PureSip' },
+  ...(reviews.length > 0
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: product.rating ?? 4.8,
+          reviewCount: product.reviewCount ?? reviews.length,
+        },
+      }
+    : {}),
+};
+
+const featureBullets = [
+  '18/8 double-wall vacuum insulated stainless steel',
+  'Keeps drinks cold 24 hours, hot 12 hours',
+  'Quarter-turn leak-proof lid with silicone gasket',
+  'Powder-coat grip finish — sweat-free exterior',
+  'Fits standard cup holders; dishwasher-safe lid',
+];
+---
+
+<BaseLayout title={product.name} description={product.shortDescription}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <section class="container-page py-10">
+    <nav class="text-sm text-slate-text" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-brand">Home</a> ›
+      <a href="/shop" class="hover:text-brand">Shop</a> ›
+      <span class="text-ink">{product.name}</span>
+    </nav>
+
+    <div class="mt-6 grid lg:grid-cols-2 gap-10">
+      <!-- Gallery -->
+      <div>
+        <div class="card overflow-hidden aspect-square relative" style="background: color-mix(in srgb, var(--brand) 7%, var(--mist))">
+          <img
+            id="pdp-image"
+            src={product.variants[0]?.images[0] ?? ''}
+            alt={`${product.name} in ${product.variants[0]?.color ?? ''}`}
+            class="absolute inset-0 h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+            width="900"
+            height="900"
+          />
+        </div>
+        <div id="pdp-thumbs" class="mt-4 flex gap-3" role="tablist" aria-label="Product images">
+          {(product.variants[0]?.images ?? []).map((img: string, i: number) => (
+            <button
+              type="button"
+              class="h-20 w-20 rounded-2xl overflow-hidden border-2 transition-colors"
+              class:list={[i === 0 ? 'border-brand' : 'border-transparent hover:border-brand/40']}
+              data-thumb={img}
+              aria-label={`View image ${i + 1}`}
+            >
+              <img src={img} alt="" class="h-full w-full object-cover" loading="lazy" width="80" height="80" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Buy box -->
+      <div>
+        <span class="chip capitalize">{product.category}</span>
+        <h1 class="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight">{product.name}</h1>
+        <div class="mt-2 flex items-center gap-3 text-sm text-slate-text">
+          {product.rating ? (
+            <span>★ {product.rating.toFixed(1)} · {product.reviewCount} reviews</span>
+          ) : (
+            <span>No reviews yet — be the first</span>
+          )}
+        </div>
+        <p class="mt-4 text-lg text-slate-text">{product.shortDescription}</p>
+
+        <p class="mt-5 font-display text-3xl font-bold" id="pdp-price">$0.00</p>
+        <p class="mt-1 text-sm text-slate-text" id="pdp-stock"></p>
+
+        <fieldset class="mt-6">
+          <legend class="text-sm font-semibold">Color — <span id="pdp-color-name">{product.variants[0]?.color}</span></legend>
+          <div id="pdp-variants" class="mt-3 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Choose a color">
+            {product.variants.map((v: VariantLite, i: number) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={i === 0}
+                class="group relative h-11 w-11 rounded-full border-2 transition-transform hover:scale-110"
+                style={`background: ${v.colorHex}; border-color: ${i === 0 ? 'var(--brand)' : 'color-mix(in srgb, var(--ink) 20%, transparent)'}`}
+                data-variant={v.id}
+                data-color={v.color}
+                data-hex={v.colorHex}
+                data-price={v.price}
+                data-stock={v.stock}
+                data-images={JSON.stringify(v.images)}
+                aria-label={`${v.color}${v.stock === 0 ? ' (sold out)' : ''}`}
+                disabled={v.stock === 0}
+                class:list={v.stock === 0 ? ['opacity-30 cursor-not-allowed'] : []}
+              >
+                {v.stock === 0 && <span class="absolute inset-0 grid place-items-center text-[0.6rem] font-bold text-white">✕</span>}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="mt-6 flex items-center gap-4">
+          <div class="inline-flex items-center rounded-full border" style="border-color: color-mix(in srgb, var(--ink) 20%, transparent)">
+            <button type="button" id="qty-dec" class="px-4 py-2.5 hover:text-brand" aria-label="Decrease quantity">−</button>
+            <span id="qty-value" class="min-w-8 text-center font-semibold" aria-live="polite">1</span>
+            <button type="button" id="qty-inc" class="px-4 py-2.5 hover:text-brand" aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" id="add-to-cart" class="btn btn-primary flex-1 sm:flex-none sm:px-10" data-sku-suffix>
+            Add to Cart
+          </button>
+        </div>
+
+        <ul class="mt-8 space-y-2.5 text-sm">
+          {featureBullets.map((b) => (
+            <li class="flex gap-2.5 items-start"><span class="text-brand mt-0.5" aria-hidden="true">✓</span><span>{b}</span></li>
+          ))}
+        </ul>
+
+        <!-- Accordions -->
+        <div class="mt-8 divide-y" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+          {[
+            { t: 'Details', b: product.longDescription },
+            { t: 'Materials & Care', b: '18/8 food-grade stainless steel body; BPA-free polypropylene lid; food-grade silicone seals. Hand-wash the body, top-rack dishwasher-safe lid. Do not microwave or freeze.' },
+            { t: 'Shipping', b: 'Standard 3–5 business days ($4.99, free over $40) or Express 1–2 business days ($9.99). 30-day returns — see our refund policy.' },
+          ].map((row) => (
+            <details class="group py-4">
+              <summary class="flex cursor-pointer items-center justify-between font-semibold text-[0.95rem] list-none">
+                {row.t}
+                <span class="transition-transform group-open:rotate-45 text-brand text-xl leading-none" aria-hidden="true">+</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-text leading-relaxed">{row.b}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Related -->
+    {related.length > 0 && (
+      <section class="mt-20">
+        <h2 class="font-display text-2xl font-bold tracking-tight">Pairs well with</h2>
+        <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {related.map((p) => <ProductCard product={p} />)}
+        </div>
+      </section>
+    )}
+
+    <!-- Reviews -->
+    <section class="mt-20">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <h2 class="font-display text-2xl font-bold tracking-tight">Reviews</h2>
+        <button type="button" id="review-toggle" class="btn btn-ghost !py-2 text-sm">Write a review</button>
+      </div>
+      <form id="review-form" class="hidden card mt-5 p-6 grid gap-4 sm:grid-cols-2" novalidate={false}>
+        <input type="hidden" name="productSlug" value={product.slug} />
+        <label class="text-sm font-semibold">Rating
+          <select name="rating" class="field mt-1.5" required>
+            {[
+              ['5', '★★★★★ Loved it'],
+              ['4', '★★★★ Really good'],
+              ['3', '★★★ It was fine'],
+              ['2', '★★ Meh'],
+              ['1', '★ Not for me'],
+            ].map(([v, l]) => <option value={v}>{l}</option>)}
+          </select>
+        </label>
+        <label class="text-sm font-semibold">Name
+          <input name="authorName" required minlength="2" maxlength="80" class="field mt-1.5" placeholder="Your name" />
+        </label>
+        <label class="text-sm font-semibold sm:col-span-2">Title
+          <input name="title" required minlength="3" maxlength="120" class="field mt-1.5" placeholder="Sums it up in a few words" />
+        </label>
+        <label class="text-sm font-semibold sm:col-span-2">Review
+          <textarea name="body" required minlength="10" maxlength="2000" rows="4" class="field mt-1.5" placeholder="What did you think?"></textarea>
+        </label>
+        <div class="sm:col-span-2 flex items-center gap-3">
+          <button type="submit" class="btn btn-primary">Submit review</button>
+          <span id="review-status" class="text-sm text-slate-text"></span>
+        </div>
+      </form>
+      <div class="mt-8 grid gap-4 md:grid-cols-2">
+        {reviews.map((r) => (
+          <article class="card p-6">
+            <div class="flex items-center justify-between">
+              <p class="font-semibold text-sm">{r.title}</p>
+              <span class="text-amber-400 text-sm" aria-label={`${r.rating} out of 5 stars`}>{'★'.repeat(r.rating)}</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-text leading-relaxed">{r.body}</p>
+            <p class="mt-3 text-xs text-slate-text">{r.authorName} · {new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</p>
+          </article>
+        ))}
+        {reviews.length === 0 && <p class="text-sm text-slate-text">No reviews yet — yours could be first.</p>}
+      </div>
+    </section>
+  </section>
+
+  <!-- Sticky mobile add-to-cart bar -->
+  <div id="pdp-sticky" class="fixed bottom-0 inset-x-0 z-40 glass border-t p-3 lg:hidden" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+    <div class="container-page !px-0 flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold truncate">{product.name}</p>
+        <p class="text-sm font-bold text-brand" id="pdp-price-mobile">$0.00</p>
+      </div>
+      <button type="button" class="btn btn-primary !py-2.5" id="add-to-cart-mobile">Add to Cart</button>
+    </div>
+  </div>
+
+  <script>
+    import '../../scripts/pdp';
+  </script>
+</BaseLayout>

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Admin" description="PureSip admin panel.">
+  <section class="container-page py-14 max-w-5xl">
+    <div id="admin-login" class="max-w-sm mx-auto card p-8">
+      <h1 class="font-display text-2xl font-bold">Admin</h1>
+      <p class="mt-2 text-sm text-slate-text">Enter the admin token (set <code>ADMIN_TOKEN</code> in <code>.dev.vars</code>).</p>
+      <form id="admin-token-form" class="mt-5 grid gap-3">
+        <input type="password" id="admin-token" class="field" placeholder="Admin token" required aria-label="Admin token" />
+        <button class="btn btn-primary" type="submit">Sign in</button>
+        <p id="admin-login-error" class="text-sm text-red-500" hidden></p>
+      </form>
+    </div>
+
+    <div id="admin-panel" class="hidden">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <h1 class="font-display text-3xl font-bold tracking-tight">PureSip Admin</h1>
+        <button id="admin-logout" class="btn btn-ghost !py-2 text-sm">Sign out</button>
+      </div>
+
+      <div id="admin-stats" class="mt-8 grid gap-4 sm:grid-cols-3"><!-- populated --></div>
+
+      <h2 class="mt-10 font-display text-xl font-bold">Recent orders</h2>
+      <div class="card mt-4 overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-text border-b" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+              <th class="px-4 py-3 font-semibold">Order</th>
+              <th class="px-4 py-3 font-semibold">Customer</th>
+              <th class="px-4 py-3 font-semibold">Total</th>
+              <th class="px-4 py-3 font-semibold">Status</th>
+              <th class="px-4 py-3 font-semibold">Update</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders"></tbody>
+        </table>
+      </div>
+
+      <h2 class="mt-10 font-display text-xl font-bold">Top products</h2>
+      <div id="admin-top" class="card mt-4 p-5 text-sm space-y-2"><!-- populated --></div>
+    </div>
+  </section>
+
+  <script>
+    import '../scripts/admin-page';
+  </script>
+</BaseLayout>

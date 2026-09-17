@@ -1,0 +1,13 @@
+# Cloudflare Pages project config for the Astro SSR frontend.
+# Deploy from apps/web:  wrangler pages deploy
+name = "puresip"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Set these in the Pages dashboard (or via `wrangler pages deploy --var`):
+#   PUBLIC_API_BASE_URL = https://puresip-api.<your-subdomain>.workers.dev
+#   PUBLIC_IMAGES_BASE_URL = (optional R2 public URL; leave empty to serve bundled placeholder art)
+[vars]
+PUBLIC_API_BASE_URL = ""
+PUBLIC_IMAGES_BASE_URL = ""

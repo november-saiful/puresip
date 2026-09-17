@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Your Cart" description="Review your PureSip cart — free shipping over $40.">
+  <section class="container-page py-10">
+    <h1 class="font-display text-3xl md:text-4xl font-bold tracking-tight">Your cart</h1>
+    <div id="cart-page-root" class="mt-8 grid lg:grid-cols-[1fr,380px] gap-8 items-start">
+      <div id="cart-lines" class="space-y-4"><!-- populated --></div>
+      <aside class="card p-6 sticky top-24">
+        <h2 class="font-display font-bold text-lg">Summary</h2>
+        <div class="mt-4 space-y-2.5 text-sm">
+          <div class="flex justify-between"><span class="text-slate-text">Subtotal</span><span id="sum-subtotal">$0.00</span></div>
+          <div class="flex justify-between" id="sum-discount-row" hidden>
+            <span class="text-slate-text">Discount <span id="sum-promo-code" class="chip !text-[0.7rem] !py-0.5"></span></span>
+            <span id="sum-discount" class="text-brand font-semibold"></span>
+          </div>
+        </div>
+        <form id="promo-form" class="mt-4 flex gap-2">
+          <input name="code" class="field flex-1" placeholder="Promo code" aria-label="Promo code" />
+          <button class="btn btn-ghost !py-2.5" type="submit">Apply</button>
+        </form>
+        <p class="mt-2 text-xs text-slate-text">Try <strong>PURE10</strong> for 10% off.</p>
+        <div class="mt-4 pt-4 border-t space-y-2.5 text-sm" style="border-color: color-mix(in srgb, var(--ink) 10%, transparent)">
+          <div class="flex justify-between text-sm"><span class="text-slate-text">Shipping estimate</span><span id="sum-shipping">—</span></div>
+          <div class="flex justify-between font-bold text-base"><span>Total</span><span id="sum-total">$0.00</span></div>
+        </div>
+        <a href="/checkout" class="btn btn-primary w-full mt-5">Checkout</a>
+        <a href="/shop" class="btn btn-ghost w-full mt-2">Continue shopping</a>
+      </aside>
+    </div>
+  </section>
+
+  <script>
+    import '../scripts/cart-page';
+  </script>
+</BaseLayout>
