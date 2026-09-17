@@ -130,7 +130,7 @@ jobs:
         run: npx wrangler deploy --env production
 
       - name: Deploy Pages frontend
-        run: npx wrangler pages deploy apps/web/dist --project-name puresip --branch main
+        run: npx wrangler pages deploy apps/web/dist --project-name puresip --branch main --var PUBLIC_API_BASE_URL:${{ vars.PUBLIC_API_BASE_URL }}
 
   preview:
     name: Preview (PR)
@@ -155,7 +155,7 @@ jobs:
       - name: Ensure Pages project exists
         run: npx wrangler pages project create puresip --production-branch main || echo "Pages project already exists"
       - name: Deploy Pages preview
-        run: npx wrangler pages deploy apps/web/dist --project-name puresip --branch ${{ github.head_ref }}
+        run: npx wrangler pages deploy apps/web/dist --project-name puresip --branch ${{ github.head_ref }} --var PUBLIC_API_BASE_URL:https://puresip-api.november-saiful.workers.dev
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
