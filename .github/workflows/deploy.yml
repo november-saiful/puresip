@@ -112,7 +112,7 @@ jobs:
       - name: Generate placeholder images
         run: node scripts/generate-images.mjs
 
-      - name: Guard: PUBLIC_API_BASE_URL is set
+      - name: Guard PUBLIC_API_BASE_URL is set
         run: node scripts/check-api-base.mjs
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
@@ -122,7 +122,7 @@ jobs:
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
 
-      - name: Guard: built bundle inlines PUBLIC_API_BASE_URL
+      - name: Guard built bundle inlines PUBLIC_API_BASE_URL
         run: node scripts/check-api-base.mjs --artifact
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
@@ -160,7 +160,7 @@ jobs:
         run: npm ci
       - name: Generate placeholder images
         run: node scripts/generate-images.mjs
-      - name: Guard: PUBLIC_API_BASE_URL is set
+      - name: Guard PUBLIC_API_BASE_URL is set
         run: node scripts/check-api-base.mjs
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
@@ -168,7 +168,7 @@ jobs:
         run: npm run build
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
-      - name: Guard: built bundle inlines PUBLIC_API_BASE_URL
+      - name: Guard built bundle inlines PUBLIC_API_BASE_URL
         run: node scripts/check-api-base.mjs --artifact
         env:
           PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
